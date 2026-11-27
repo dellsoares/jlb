@@ -1,0 +1,25 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Primeiro acesso | Jenniffer Loanda Beauty</title><link rel="icon" href="assets/favicon.png"><link rel="stylesheet" href="style.css"><script src="config.js" defer></script></head><body>
+<header class="header"><div class="container head-inner"><a class="identity" href="index.html"><img src="assets/logo-jlb.png" alt="JLB"><span><strong>Jenniffer Loanda</strong><small>BEAUTY</small></span></a></div></header>
+<main class="container admin-main"><section class="admin-card" style="max-width:540px;margin:55px auto"><div class="eyebrow">CONVITE PARA A EQUIPE</div><h1>Defina sua senha</h1><p id="firstInfo" class="admin-note">Abra esta página pelo link recebido no e-mail de convite.</p><form id="firstForm" class="small-form" hidden><label>Nova senha<input id="pass1" type="password" minlength="12" autocomplete="new-password" required></label><label>Confirmar senha<input id="pass2" type="password" minlength="12" autocomplete="new-password" required></label><button type="submit" class="mini-btn">Salvar senha</button></form><p id="firstMessage" role="status" class="notice"></p><a href="admin.html" class="text-link">Ir para o painel ↗</a></section></main>
+<script type="module">
+import {createClient} from 'https://esm.sh/@supabase/supabase-js@2.49.4';
+const config=window.JLB_CONFIG;
+const info=document.querySelector('#firstInfo'),form=document.querySelector('#firstForm'),msg=document.querySelector('#firstMessage');
+const client=createClient(config.supabaseUrl,config.supabasePublishableKey,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:true,flowType:'implicit'}});
+async function init(){try{
+ const hash=new URLSearchParams(location.hash.slice(1));
+ if(hash.get('error_description'))throw Error(hash.get('error_description'));
+ if(hash.get('access_token')&&hash.get('refresh_token')){
+   const {error}=await client.auth.setSession({access_token:hash.get('access_token'),refresh_token:hash.get('refresh_token')});
+   if(error)throw error;history.replaceState({},'',location.pathname);
+ }
+ const {data}=await client.auth.getSession();
+ if(!data.session)throw Error('Link expirado ou sem sessão. Solicite ao MASTER um novo convite.');
+ form.hidden=false;info.textContent='Digite uma nova senha com pelo menos 12 caracteres.';
+ }catch(e){msg.textContent=e.message}}
+form.addEventListener('submit',async e=>{e.preventDefault();const a=document.querySelector('#pass1').value,b=document.querySelector('#pass2').value;
+ if(a!==b){msg.textContent='As duas senhas precisam ser iguais.';return}
+ if(a.length<12){msg.textContent='Use pelo menos 12 caracteres.';return}
+ const btn=form.querySelector('button');btn.disabled=true;try{const {error}=await client.auth.updateUser({password:a});if(error)throw error;msg.textContent='Senha criada! Você já pode entrar no painel.';form.hidden=true;await client.auth.signOut()}catch(err){msg.textContent=err.message;btn.disabled=false}});
+init();
+</script></body></html>

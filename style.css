@@ -59,3 +59,6 @@
 .live-catalog-item:hover{border-color:#bd9765;background:#fff9f0}
 @media(max-width:760px){.live-catalog-items{grid-template-columns:1fr}.live-catalog{padding:17px}.live-catalog-item{padding:13px}}
 .panel-form label[hidden]{display:none!important}
+
+/* V1.2.1: elementos de acesso restrito não devem aparecer até autorização MASTER */
+[hidden]{display:none!important}
