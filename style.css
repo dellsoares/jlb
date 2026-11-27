@@ -62,3 +62,42 @@
 
 /* V1.2.1: elementos de acesso restrito não devem aparecer até autorização MASTER */
 [hidden]{display:none!important}
+
+
+/* V1.2.1 — ajuste visual pontual: cantos suavemente arredondados.
+   Mantém estrutura, cores, tipografia, fotografia, lógica e estados originais. */
+:root { --jlb-soft-card: 12px; --jlb-soft-button: 8px; --jlb-soft-field: 8px; }
+/* Cartões e seções com superfícies */
+.service-card, .course-banner, .port-item, .experience-steps > div,
+.faq-list details, .booking-shell, .side-card, .admin-card,
+.stat, .choice, .mode-choice, .day-pill, .time-slot,
+.live-catalog-item, .confirmed-box, .message-preview,
+.calendar-actions, .admin-dialog, .demo-banner,
+.table-wrap, .admin-section-nav, .admin-section-nav a,
+.notice, .empty-note, .status-chip { border-radius: var(--jlb-soft-card); }
+/* Evita imagens fora das bordas arredondadas */
+.service-card, .port-item, .course-banner, .choice, .mode-choice,
+.booking-shell, .side-card, .stat, .admin-card, .live-catalog-item,
+.table-wrap, .confirmed-box { overflow: hidden; }
+/* Botões e links com aparência de botão */
+.btn, .nav-cta, .mini-btn, .date-arrows button, .back-btn, .next-btn,
+.day-pill, .time-slot, .wizard-actions button, .btn-secondary,
+.action-inline, .calendar-actions .calendar-links > a,
+.calendar-actions .calendar-links > button, .admin-table .table-actions button,
+.menu-toggle { border-radius: var(--jlb-soft-button); }
+/* Campos do agendamento, login e administração */
+.field input, .field select, .field textarea,
+.small-form input, .small-form select, .small-form textarea,
+.panel-form input:not([type=checkbox]), .panel-form select, .panel-form textarea,
+.admin-controls input, .admin-controls select,
+.admin-card > .form-grid input, .admin-card > .form-grid select,
+.admin-card > .form-grid textarea, .admin-table td select {
+  border-radius: var(--jlb-soft-field);
+}
+/* Ícones e fotos: a imagem hero mantém seu arco característico. */
+.hero-tag { border-radius: 10px; }
+.hero-photo, .hero-outline { border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
+/* Evita parecer tudo excessivamente arredondado em telas pequenas. */
+@media(max-width:640px) {
+  :root { --jlb-soft-card: 10px; --jlb-soft-button: 8px; }
+}
