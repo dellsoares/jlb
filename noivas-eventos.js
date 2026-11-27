@@ -1,4 +1,4 @@
-/* Jenniffer Loanda Beauty V1.5 — Noivas e Eventos | Modulo isolado do painel */
+/* Jenniffer Loanda Beauty V1.6 — Noivas e Eventos | Agenda de produções especiais */
 (()=>{'use strict';
 const api=window.JLB, dashboard=document.getElementById('dashboard');
 if(!api || api.demo || !dashboard)return;
@@ -7,7 +7,7 @@ const $=(id)=>document.getElementById(id);
 const nav=dashboard.querySelector('.admin-section-nav');
 if(!nav)return;
 const labels={consulta:'Consulta',orcamento:'Orçamento',confirmado:'Confirmado',concluido:'Concluído',cancelado:'Cancelado'};
-let events=[], bookings=[], role='', loading=false;
+let events=[], bookings=[], blocks=[], role='', loading=false;
 
 const style=document.createElement('style');
 style.textContent=`
@@ -31,7 +31,7 @@ const section=document.createElement('section');section.className='admin-card';s
 section.innerHTML=`
   <div class="section-label">10 · PRODUÇÕES ESPECIAIS</div>
   <h2>Noivas e Eventos</h2>
-  <p class="admin-note">Gerencie cerimônias, prazos de preparação, equipe e deslocamento. O registro aqui <strong>não bloqueia horário automaticamente</strong>: utilize a agenda normal para reservar o atendimento.</p>
+  <p class="admin-note">Gerencie cerimônias, prazos de preparação, equipe e deslocamento. Eventos confirmados podem <strong>bloquear a agenda</strong> pelo botão na lista. O sistema verifica reservas e bloqueios existentes antes de registrar o período. Para editar data ou prazos de evento bloqueado, libere antes o horário.</p>
   <form id="jlbV15Form" class="panel-form">
     <input type="hidden" id="jlbV15Id">
     <div class="jlb-v15-fields">
@@ -73,14 +73,18 @@ function loadReserveOptions(selected=''){
 function render(){
  const q=$('jlbV15Search').value.toLocaleLowerCase('pt-BR').trim();
  const shown=events.filter(e=>!q||[e.cliente_nome,e.whatsapp,e.local_evento,e.tipo,e.status].join(' ').toLocaleLowerCase('pt-BR').includes(q));
- $('jlbV15Rows').innerHTML=shown.length?shown.map(e=>`
+ $('jlbV15Rows').innerHTML=shown.length?shown.map(e=>{
+  const bl=blocks.find(b=>b.evento_id===e.id);
+  const canManage=['master','administradora'].includes(role);
+  return `
   <tr><td><strong>${esc(datePt(e.data_evento))}</strong><span class="row-sub">${esc(e.cliente_nome)}</span><span class="row-sub">${esc(e.whatsapp)}</span></td>
   <td><strong>${esc(e.tipo==='noiva'?'Noiva':e.tipo==='evento'?'Evento':'Outra produção')}</strong><span class="row-sub">${esc(e.local_evento||'Local a definir')}</span><span class="row-sub">${esc(hm(e.hora_evento))} · ${esc(e.quantidade_pessoas)} pessoa(s)</span></td>
-  <td>${esc(e.equipe||'A definir')}<span class="row-sub">${esc(e.preparacao_minutos)} min de preparo · ${esc(e.deslocamento_minutos)} min de deslocamento</span><span class="row-sub">Pronta até ${esc(hm(e.hora_limite))}</span></td>
+  <td>${esc(e.equipe||'A definir')}<span class="row-sub">${esc(e.preparacao_minutos)} min de preparo · ${esc(e.deslocamento_minutos)} min de deslocamento</span><span class="row-sub">Pronta até ${esc(hm(e.hora_limite))}</span>${bl?`<span class="row-sub"><strong>AGENDA BLOQUEADA: ${esc(hm(bl.inicio))}–${esc(hm(bl.fim))}</strong></span>`:''}</td>
   <td><span class="status-chip ${e.status==='confirmado'?'confirmado':e.status==='cancelado'?'cancelado':'pendente'}">${esc(labels[e.status]||e.status)}</span></td>
-  <td><div class="table-actions"><button class="action-inline" type="button" data-v15-edit="${esc(e.id)}">Editar</button>${role!=='recepcao'?`<button class="action-inline" type="button" data-v15-delete="${esc(e.id)}">Excluir</button>`:''}</div></td></tr>`).join(''):'<tr><td colspan="5" class="jlb-v15-empty">Nenhuma produção encontrada.</td></tr>';
+  <td><div class="table-actions"><button class="action-inline" type="button" data-v15-edit="${esc(e.id)}">Editar</button>${role!=='recepcao'?`<button class="action-inline" type="button" data-v15-delete="${esc(e.id)}">Excluir</button>`:''}${canManage ? (bl?`<button class="action-inline" type="button" data-v16-block="${esc(e.id)}" data-v16-action="liberar">Liberar agenda</button>`:e.status==='confirmado'?`<button class="action-inline" type="button" data-v16-block="${esc(e.id)}" data-v16-action="bloquear">Bloquear agenda</button>`:''):''}</div></td></tr>`}).join(''):'<tr><td colspan="5" class="jlb-v15-empty">Nenhuma produção encontrada.</td></tr>';
  $('jlbV15Rows').querySelectorAll('[data-v15-edit]').forEach(b=>b.addEventListener('click',()=>edit(b.dataset.v15Edit)));
  $('jlbV15Rows').querySelectorAll('[data-v15-delete]').forEach(b=>b.addEventListener('click',()=>remove(b.dataset.v15Delete)));
+ $('jlbV15Rows').querySelectorAll('[data-v16-block]').forEach(b=>b.addEventListener('click',()=>changeBlock(b.dataset.v16Block,b.dataset.v16Action,b))); 
 }
 function edit(id){
  const e=events.find(x=>x.id===id);if(!e)return;
@@ -102,7 +106,35 @@ async function remove(id){
  if(!events.find(e=>e.id===id)||!confirm('Excluir o registro deste evento? A reserva vinculada NÃO será apagada.'))return;
  try{await rpc('jlb_v15_excluir_evento',{p_id:id},true);await reload();showMessage('Evento excluído. A agenda permanece intacta.')}catch(e){showMessage(e.message,true)}
 }
-async function reload(){const result=await rpc('jlb_v15_listar_eventos',{},true);if(!Array.isArray(result))throw Error('Lista de eventos inválida.');events=result;render()}
+async function changeBlock(id,action,btn){
+ const e=events.find(x=>x.id===id);if(!e)return;
+ const isRelease=action==='liberar';
+ let description='';
+ if(!isRelease){
+   const end=e.hora_limite?Number(String(e.hora_limite).slice(0,2))*60+Number(String(e.hora_limite).slice(3,5)):0;
+   const start=end-Number(e.preparacao_minutos||0)-Number(e.deslocamento_minutos||0);
+   if(!end||start<0||start>=end){showMessage('Informe um prazo de conclusão e durações válidas dentro do mesmo dia.',true);return;}
+   const hmMinutes=n=>String(Math.floor(n/60)).padStart(2,'0')+':'+String(n%60).padStart(2,'0');
+   description=`Período previsto: ${hmMinutes(start)} até ${hmMinutes(end)} no dia ${datePt(e.data_evento)}.`;
+ }
+ if(!confirm(isRelease
+   ?`Liberar o bloqueio do evento de ${e.cliente_nome}? Isso volta a disponibilizar o horário se não houver outro bloqueio.`
+   :`Bloquear a agenda para ${e.cliente_nome}?\n${description}\nReservas existentes não serão canceladas.`))return;
+ btn.disabled=true;
+ try{
+   const r=await rpc(isRelease?'jlb_v16_liberar_evento':'jlb_v16_bloquear_evento',{p_evento_id:id},true);
+   await reload();
+   showMessage(isRelease?'Horário liberado. O evento permanece cadastrado.':`Horário bloqueado na Agenda (${hm(r.inicio)}–${hm(r.fim)}).`);
+ }catch(err){showMessage(err.message,true)}finally{btn.disabled=false}
+}
+async function reload(){
+ const [result,blocked]=await Promise.all([
+   rpc('jlb_v15_listar_eventos',{},true),
+   rpc('jlb_v16_listar_bloqueios',{},true)
+ ]);
+ if(!Array.isArray(result)||!Array.isArray(blocked))throw Error('Falha ao carregar eventos ou seus bloqueios.');
+ events=result;blocks=blocked;render();
+}
 async function init(){
  if(loading||dashboard.hidden)return;
  loading=true;
@@ -132,13 +164,13 @@ $('jlbV15Form').addEventListener('submit',async e=>{
   p_reserva_id:$('jlbV15Reserva').value||null,p_status:$('jlbV15Status').value,
   p_observacoes:$('jlbV15Obs').value.trim()
  };
- try{await rpc('jlb_v15_salvar_evento',payload,true);resetForm();await reload();showMessage('Produção salva. Lembre-se de reservar o horário na Agenda.');}
+ try{await rpc('jlb_v15_salvar_evento',payload,true);resetForm();await reload();showMessage('Produção salva. Se estiver confirmada, use “Bloquear agenda” na lista para reservar o período.');}
  catch(error){showMessage(error.message,true)}finally{button.disabled=false}
 });
 $('jlbV15Reset').addEventListener('click',()=>{resetForm();loadReserveOptions()});
 $('jlbV15Search').addEventListener('input',render);
 const observer=new MutationObserver(()=>{
- if(dashboard.hidden){section.hidden=true;link.hidden=true;events=[];bookings=[];role='';}
+ if(dashboard.hidden){section.hidden=true;link.hidden=true;events=[];bookings=[];blocks=[];role='';}
  else init();
 });
 observer.observe(dashboard,{attributes:true,attributeFilter:['hidden']});
