@@ -55,3 +55,12 @@ document.addEventListener('DOMContentLoaded',()=>{
   script.defer=true;
   document.body.appendChild(script);
 });
+
+/* V1.5: painel Noivas e Eventos, isolado do fluxo de reservas. */
+document.addEventListener('DOMContentLoaded',()=>{
+  if(!document.getElementById('dashboard'))return;
+  const script=document.createElement('script');
+  script.src='noivas-eventos.js?v=20261127-1';
+  script.async=false;
+  document.body.appendChild(script);
+});
