@@ -31,6 +31,13 @@ window.JLB_CONFIG = Object.freeze({
         if(admin && /^jlb_admin_[a-z0-9_]+$/.test(name)){
           return original('jlb_v13_call',{p_name:name,p_args:payload},true);
         }
+        if(!admin && name==='jlb_agendar'){
+          const code=document.getElementById('jlbCupom')?.value?.trim().toUpperCase();
+          if(code) return original('jlb_v14_agendar_cupom',{p_codigo:code,p_args:payload},false);
+        }
+        if(!admin && name==='jlb_cancelar'){
+          return original('jlb_v14_cancelar_com_cupom',{p_token:payload.p_token},false);
+        }
         return original(name,payload,admin);
       };
       attached=true;
@@ -39,3 +46,12 @@ window.JLB_CONFIG = Object.freeze({
   });
   window.JLB_V13_CHECK=()=>attached;
 })();
+
+/* Carrega o módulo V1.4 somente nas páginas necessárias. */
+document.addEventListener('DOMContentLoaded',()=>{
+  if(!document.getElementById('dashboard')&&!document.getElementById('clientForm'))return;
+  const script=document.createElement('script');
+  script.src='vip-cupons.js?v=20261127-1';
+  script.defer=true;
+  document.body.appendChild(script);
+});
