@@ -1,4 +1,3 @@
-
 /* JENNIFFER LOANDA BEAUTY — Configuração Supabase */
 
 window.JLB_CONFIG = Object.freeze({
