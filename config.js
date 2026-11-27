@@ -28,6 +28,9 @@ window.JLB_CONFIG = Object.freeze({
       }
       const original=api.rpc;
       api.rpc=function(name,payload={},admin=false){
+        if(admin && name==='jlb_admin_status' && payload && payload.p_status==='cancelado'){
+          return original('jlb_v19_cancelar_painel',{p_id:payload.p_id},true);
+        }
         if(admin && /^jlb_admin_[a-z0-9_]+$/.test(name)){
           return original('jlb_v13_call',{p_name:name,p_args:payload},true);
         }
@@ -63,4 +66,13 @@ document.addEventListener('DOMContentLoaded',()=>{
   script.src='noivas-eventos.js?v=20261127-1';
   script.async=false;
   document.body.appendChild(script);
+});
+
+
+/* V1.9: finalização editorial, política de privacidade e rodapés. */
+document.addEventListener('DOMContentLoaded',()=>{
+  const finalScript=document.createElement('script');
+  finalScript.src='finalizacao.js?v=20261127-19';
+  finalScript.async=false;
+  document.body.appendChild(finalScript);
 });

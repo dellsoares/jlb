@@ -1,0 +1,6 @@
+# Para uso futuro se o site ocupar a raiz de um dominio proprio.
+# Em github.io/jlb/, robos consultam https://dellsoares.github.io/robots.txt,
+# portanto este arquivo /jlb/robots.txt nao controla a indexacao do host.
+User-agent: *
+Allow: /
+Sitemap: https://dellsoares.github.io/jlb/sitemap.xml
