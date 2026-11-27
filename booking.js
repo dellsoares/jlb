@@ -9,7 +9,7 @@ const monthLabel=(date)=>new Date(date+'T12:00:00Z').toLocaleDateString('pt-BR',
 function stateService(){return catalog?.services.find(s=>s.id===selected.service)}
 async function init(){
  try{catalog=await rpc('jlb_catalogo');if(!catalog?.services?.length)throw Error('Catálogo ainda não cadastrado.');renderServices();renderDates();const wanted=query.get('servico');if(wanted&&catalog.services.some(s=>s.id===wanted))selectService(wanted);if(query.get('modalidade')==='externo'&&stateService()?.allows_external!==false)selected.mode='externo';renderMode();updateNext()}
- catch(e){msg('A agenda não está disponível: '+e.message);$('#serviceOptions').innerHTML='<p class="empty-note">Consulte disponibilidade diretamente pelo Instagram.</p>'}
+ catch(e){msg('A agenda não está disponível: '+e.message);$('#serviceOptions').innerHTML='<p class="empty-note">A agenda online está em configuração. Para consultar horários e serviços, fale diretamente com Jenniffer.</p><p><a class="btn btn-gold" href="https://www.instagram.com/jennifferloanda/" target="_blank" rel="noopener noreferrer">Consultar pelo Instagram ↗</a></p>'}
 }
 function renderServices(){
  $('#serviceOptions').innerHTML=catalog.services.filter(x=>x.active!==false).map(s=>{
